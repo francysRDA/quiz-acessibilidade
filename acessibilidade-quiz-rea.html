@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REA: Acessibilidade e Inclusão Digital</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #27ae60;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --error-color: #c0392b;
+            --focus-outline: #2980b9;
+            --base-font-size: 16px;
+        }
+
+        html { font-size: var(--base-font-size); }
+
+        body.high-contrast {
+            --primary-color: #ffff00;
+            --accent-color: #ffff00;
+            --bg-color: #000000;
+            --card-bg: #000000;
+            --text-color: #ffffff;
+            --error-color: #ff0000;
+            --focus-outline: #ffffff;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            transition: background-color 0.3s, color 0.3s;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Access Controls Header */
+        .a11y-controls {
+            background-color: var(--primary-color);
+            padding: 0.8rem;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr; /* Ajuda esq | Centro | Vazio dir */
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .a11y-group-center {
+            grid-column: 2;
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .a11y-group-left {
+            grid-column: 1;
+            display: flex;
+            justify-content: flex-start;
+        }
+
+        .a11y-controls button {
+            background: #fff;
+            border: 2px solid transparent;
+            padding: 0.5rem 0.8rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9rem;
+            color: #2c3e50;
+        }
+
+        /* Botão de Ajuda Padronizado */
+        .btn-help-header {
+            background-color: #ffffff !important;
+            color: #2c3e50 !important;
+            border: 2px solid transparent !important;
+        }
+        .btn-help-header:hover { background-color: #f0f3f4 !important; }
+
+        .high-contrast .a11y-controls button {
+            background: #000;
+            color: #ffff00;
+            border-color: #ffff00;
+        }
+        .high-contrast .btn-help-header {
+            background-color: #000 !important;
+            color: #ffff00 !important;
+            border-color: #ffff00 !important;
+        }
+
+        button:focus {
+            outline: 4px solid var(--focus-outline) !important;
+            outline-offset: 2px;
+        }
+
+        /* Help Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 1rem;
+        }
+        .modal-content {
+            background: var(--card-bg);
+            padding: 2.5rem;
+            border-radius: 12px;
+            max-width: 650px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            color: var(--text-color);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .high-contrast .modal-content { border: 4px solid #ffff00; }
+        
+        .modal-close-large {
+            display: block;
+            width: 100%;
+            background: var(--error-color);
+            color: white;
+            border: none;
+            padding: 1.2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-top: 2rem;
+        }
+
+        .modal-content h3 { margin-bottom: 1.5rem; color: var(--primary-color); font-size: 1.8rem; text-align: center; outline: none; }
+        .high-contrast .modal-content h3 { color: #ffff00; }
+        .help-list { list-style: none; }
+        .help-list li { 
+            margin-bottom: 1.2rem; 
+            border-bottom: 1px solid rgba(0,0,0,0.1); 
+            padding-bottom: 0.8rem; 
+            font-size: 1.1rem;
+        }
+        .high-contrast .help-list li { border-bottom-color: #ffff00; }
+
+        /* Layout */
+        .container {
+            max-width: 850px;
+            margin: 1.5rem auto;
+            padding: 0 1rem;
+            flex: 1;
+            width: 100%;
+        }
+
+        header.quiz-header { text-align: center; margin-bottom: 2rem; }
+        h1 { font-size: 2.2rem; color: var(--primary-color); margin-bottom: 0.5rem; }
+        .high-contrast h1 { color: #ffff00; }
+
+        /* Phase Indicator */
+        .phase-indicator {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .phase-step {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: bold;
+            color: #7f8c8d;
+            padding-bottom: 5px;
+        }
+        .phase-step.active { color: var(--accent-color); border-bottom: 3px solid var(--accent-color); }
+        .high-contrast .phase-step.active { color: #ffff00; border-bottom-color: #ffff00; }
+
+        /* Progress */
+        .progress-bar {
+            height: 10px;
+            background-color: #ddd;
+            border-radius: 5px;
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: var(--accent-color);
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+
+        /* Card */
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 2.5rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,0.05);
+            animation: fadeIn 0.5s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .high-contrast .card { border: 2px solid #ffff00; box-shadow: none; }
+
+        /* Content Elements */
+        .badge {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: #fff;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            font-weight: bold;
+        }
+        .high-contrast .badge { background-color: #ffff00; color: #000; }
+
+        .concept-box {
+            background-color: rgba(44, 62, 80, 0.05);
+            border-left: 5px solid var(--primary-color);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border-radius: 0 8px 8px 0;
+        }
+        .high-contrast .concept-box { border: 2px solid #ffff00; background: transparent; }
+
+        .question-text { font-size: 1.5rem; font-weight: bold; margin-bottom: 1.5rem; outline: none; }
+
+        .options-list { display: flex; flex-direction: column; gap: 0.8rem; }
+        .option-btn {
+            display: block;
+            width: 100%;
+            padding: 1rem 1.2rem;
+            text-align: left;
+            background: transparent;
+            border: 2px solid var(--primary-color);
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 1.1rem;
+            color: inherit;
+            transition: all 0.2s;
+        }
+        .option-btn:hover:not(:disabled) { background-color: rgba(39, 174, 96, 0.1); }
+        .option-btn.correct { background-color: #27ae60 !important; color: #fff !important; border-color: #27ae60 !important; }
+        .option-btn.wrong { background-color: #c0392b !important; color: #fff !important; border-color: #c0392b !important; }
+
+        .feedback {
+            margin-top: 1.5rem;
+            padding: 1.2rem;
+            border-radius: 8px;
+            display: none;
+            font-size: 1.1rem;
+            line-height: 1.5;
+        }
+        .feedback.active { display: block; border: 2px solid var(--accent-color); background-color: rgba(39, 174, 96, 0.05); }
+        .feedback.error { border-color: var(--error-color); background-color: rgba(192, 57, 43, 0.05); }
+
+        .feedback-header {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 1.2rem;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .btn-primary {
+            background-color: var(--accent-color);
+            color: #fff;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            cursor: pointer;
+            width: 100%;
+        }
+        .btn-secondary {
+            background-color: #7f8c8d;
+            color: #fff;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            cursor: pointer;
+            width: 100%;
+        }
+        .high-contrast .btn-primary { background-color: #ffff00; color: #000; }
+        .high-contrast .btn-secondary { background-color: #000; color: #ffff00; border: 2px solid #ffff00; }
+
+        /* Footer */
+        footer {
+            margin-top: auto;
+            padding: 2.5rem 1rem;
+            text-align: center;
+            background-color: var(--primary-color);
+            color: #ecf0f1;
+        }
+        .high-contrast footer { border-top: 2px solid #ffff00; background-color: #000; color: #ffff00; }
+        footer a { color: #3498db; font-weight: bold; }
+        .high-contrast footer a { color: #ffff00; }
+
+        @media (max-width: 600px) {
+            .card { padding: 1.5rem; }
+            h1 { font-size: 1.7rem; }
+            .btn-group { flex-direction: column; }
+            .a11y-controls { display: flex; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="a11y-controls" aria-label="Controles de suporte e acessibilidade">
+        <div class="a11y-group-left" style="gap: 0.8rem;">
+            <button onclick="toggleHelp()" class="btn-help-header" aria-label="Abrir Guia de Ajuda">❓ Ajuda</button>
+            <button onclick="toggleAbout()" class="btn-help-header" aria-label="Abrir Sobre o Projeto">ℹ️ Sobre</button>
+        </div>
+        <div class="a11y-group-center">
+            <button onclick="changeFontSize(2)" aria-label="Aumentar texto">Aumentar Texto (A+)</button>
+            <button onclick="changeFontSize(-2)" aria-label="Diminuir texto">Diminuir Texto (A-)</button>
+            <button onclick="toggleContrast()" id="contrastBtn">Ativar Alto Contraste</button>
+        </div>
+    </nav>
+
+    <!-- Modal de Ajuda -->
+    <div id="helpModal" class="modal-overlay" role="dialog" aria-labelledby="helpTitle" aria-hidden="true">
+        <div class="modal-content" id="helpContent">
+            <h3 id="helpTitle" tabindex="-1">Guia de Uso do Quiz</h3>
+            <ul class="help-list">
+                <li><strong>🖱️ Com o Mouse:</strong> Clique nos botões para selecionar respostas ou avançar.</li>
+                <li><strong>📱 No Smartphone:</strong> Toque com o dedo diretamente sobre os botões e alternativas.</li>
+                <li><strong>⌨️ Com o Teclado:</strong> Use a tecla <strong>Tab</strong> para navegar entre os elementos e <strong>Enter</strong> ou <strong>Espaço</strong> para ativar os botões.</li>
+                <li><strong>🔍 Acessibilidade:</strong> Use os botões no topo para aumentar a letra (A+) ou ativar o modo de Alto Contraste se tiver dificuldade de visão.</li>
+                <li><strong>📖 Aprendizado e Prática:</strong> Leia primeiro o conceito teórico e depois clique em "Ir para o desafio" para responder a pergunta.</li>
+                <li><strong>🔄 Refazer:</strong> Se errar, você pode clicar em "Tentar Novamente" para revisar a questão.</li>
+                <li><strong>⬅️ Voltar:</strong> Você pode retornar para reler conceitos ou ver a questão anterior.</li>
+            </ul>
+            <button class="modal-close-large" onclick="toggleHelp()">Entendi, fechar guia</button>
+        </div>
+    </div>
+
+    <!-- Modal de Sobre -->
+    <div id="aboutModal" class="modal-overlay" role="dialog" aria-labelledby="aboutTitle" aria-hidden="true">
+        <div class="modal-content" id="aboutContent">
+            <h3 id="aboutTitle" tabindex="-1">Sobre o Projeto</h3>
+            <div style="font-size: 1.1rem; line-height: 1.6;">
+                <p style="margin-bottom: 1rem;">Este quiz é um <strong>Recurso Educacional Aberto (REA)</strong> desenvolvido como parte da disciplina de <strong>Acessibilidade e Inclusão Digital</strong>.</p>
+                <p style="margin-bottom: 1rem;">O objetivo é promover o conhecimento sobre práticas inclusivas no ambiente digital através de <strong>13 questões</strong> que abordam desde conceitos fundamentais até técnicas de desenvolvimento.</p>
+                <p style="margin-bottom: 0.5rem;"><strong>Autores:</strong></p>
+                <ul style="margin-left: 1.5rem; margin-bottom: 1rem;">
+                    <li>Antone Salbego</li>
+                    <li>Francys Ribeiro</li>
+                    <li>Lucas Correa</li>
+                </ul>
+                <p>O desenvolvimento contou com o auxílio do <strong>Gemini CLI</strong> para suporte na programação e estruturação do código.</p>
+            </div>
+            <button class="modal-close-large" onclick="toggleAbout()">Fechar Sobre</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <header class="quiz-header">
+            <h1>Quiz de Acessibilidade e Inclusão Digital</h1>
+            <div class="phase-indicator">
+                <div class="phase-step" id="ph-learn">📖 Aprendizado</div>
+                <div class="phase-step" id="ph-practice">✍️ Prática</div>
+            </div>
+        </header>
+
+        <main id="app-container">
+            <!-- Conteúdo dinâmico -->
+        </main>
+    </div>
+
+    <footer role="contentinfo">
+        <p>Recurso Educacional Aberto (REA) para a cadeira de Acessibilidade e Inclusão Digital.</p>
+        <p>Licença: <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank">CC BY 4.0</a></p>
+        <p>Autores: Antone Salbego, Francys Ribeiro & Lucas Correa.</p>
+    </footer>
+
+    <script>
+        const quizData = [
+            {
+                title: "O que é Acessibilidade Digital?",
+                concept: "Acessibilidade digital é a eliminação de barreiras na web. Ela permite que pessoas com deficiência possam perceber, compreender, navegar e interagir plenamente com conteúdos e serviços online, de forma independente.",
+                q: "Sobre Acessibilidade Digital, selecione a alternativa mais completa:",
+                o: [
+                    "É um conjunto de técnicas para otimizar o carregamento de sites em conexões lentas.",
+                    "É garantir que pessoas com deficiência possam utilizar a web com autonomia e independência.",
+                    "Refere-se exclusivamente à tradução automática de sites para outros idiomas.",
+                    "É a prática de disponibilizar o código-fonte de todos os softwares na internet."
+                ],
+                a: 1,
+                e: "O foco central é remover obstáculos para que a deficiência não impeça o uso pleno da tecnologia."
+            },
+            {
+                title: "Inclusão Digital",
+                concept: "Inclusão digital não é apenas possuir um aparelho. Ela se baseia em três pilares: acesso ao equipamento, conexão de qualidade e letramento digital (capacidade de usar a tecnologia para melhorar a vida).",
+                q: "Por que possuir um dispositivo (como um smartphone) não é suficiente para garantir a Inclusão Digital?",
+                o: [
+                    "Porque celulares são dispositivos limitados e apenas computadores geram inclusão real.",
+                    "Porque a inclusão depende também de uma conexão estável e das competências para usar as ferramentas.",
+                    "Porque os aplicativos de redes sociais são os únicos que realmente promovem a inclusão.",
+                    "Porque a inclusão digital é um conceito que se aplica apenas ao ambiente escolar e acadêmico."
+                ],
+                a: 1,
+                e: "Sem saber usar (letramento) ou sem conexão de qualidade, o equipamento sozinho não gera inclusão efetiva."
+            },
+            {
+                title: "Atributo 'Alt' em Imagens",
+                concept: "O texto alternativo (atributo 'alt') é a descrição de uma imagem. Ele é fundamental para pessoas cegas que usam leitores de tela, pois o software lê essa descrição em voz alta.",
+                q: "Qual o erro comum ao utilizar o atributo 'alt' em uma imagem informativa?",
+                o: [
+                    "Escrever uma descrição detalhada que ajude na compreensão do contexto da imagem.",
+                    "Deixar o atributo vazio ou utilizar nomes de arquivos genéricos como 'imagem1.jpg'.",
+                    "Utilizar o atributo apenas para melhorar o posicionamento do site em motores de busca (SEO).",
+                    "Inserir o texto alternativo em um idioma diferente do conteúdo principal da página."
+                ],
+                a: 1,
+                e: "Imagens sem descrição ou com nomes genéricos são barreiras intransponíveis para quem depende de leitores de tela."
+            },
+            {
+                title: "Fosso Digital",
+                concept: "O fosso digital é a desigualdade social e econômica no acesso e uso das tecnologias de informação. Ele separa aqueles que têm condições de participar da sociedade digital daqueles que estão excluídos por falta de recursos.",
+                q: "O 'Fosso Digital' pode ser reduzido apenas com a distribuição gratuita de equipamentos?",
+                o: [
+                    "Sim, pois a falta de hardware é o único fator que gera a exclusão digital no mundo.",
+                    "Não, pois a exclusão também envolve fatores como custo de conexão, infraestrutura e falta de letramento.",
+                    "Sim, desde que os equipamentos distribuídos sejam de última geração e com alta capacidade.",
+                    "Não, pois o fosso digital é um fenômeno natural que acompanha a evolução de qualquer tecnologia."
+                ],
+                a: 1,
+                e: "O fosso digital é multidimensional e reflete as desigualdades sociais e educacionais de forma profunda."
+            },
+            {
+                title: "Tecnologias Assistivas",
+                concept: "São recursos, equipamentos ou softwares que ajudam a manter ou aumentar as habilidades funcionais de pessoas com deficiência. Exemplos: leitores de tela, teclados adaptados e softwares de comando por voz.",
+                q: "Qual das opções abaixo NÃO é necessariamente um exemplo de Tecnologia Assistiva?",
+                o: [
+                    "Um software de reconhecimento de voz que permite controlar o PC sem as mãos.",
+                    "Um leitor de tela que converte textos visuais em áudio ou Braille.",
+                    "Um editor de textos padrão com corretor ortográfico automático.",
+                    "Um mouse adaptado acionado pelo movimento dos olhos ou da cabeça."
+                ],
+                a: 2,
+                e: "Embora úteis, corretores ortográficos são ferramentas de produtividade geral, não focadas em suprir uma deficiência específica."
+            },
+            {
+                title: "Inclusão de Idosos",
+                concept: "A inclusão digital de idosos combate o isolamento social, facilita o acesso a serviços de saúde e permite a participação ativa em atividades bancárias e familiares, promovendo o envelhecimento ativo.",
+                q: "Qual barreira é mais comum no processo de inclusão digital da terceira idade?",
+                o: [
+                    "A falta de interesse total dos idosos em aprender qualquer nova tecnologia.",
+                    "Interfaces complexas, com letras pequenas e falta de suporte para o aprendizado de novos fluxos.",
+                    "A proibição legal do uso de serviços bancários online por pessoas acima de 70 anos.",
+                    "A necessidade de dominar linguagens de programação para usar aplicativos básicos."
+                ],
+                a: 1,
+                e: "O design inadequado e a falta de paciência pedagógica são os maiores obstáculos para os idosos."
+            },
+            {
+                title: "Legendas e Audiodescrição",
+                concept: "Legendas tornam o áudio acessível para surdos, enquanto a audiodescrição narra elementos visuais para cegos. Ambos são vitais para que conteúdos multimídia sejam inclusivos.",
+                q: "Em um vídeo educativo, a audiodescrição deve focar em:",
+                o: [
+                    "Repetir exatamente o que está sendo dito pelos personagens no diálogo.",
+                    "Descrever elementos visuais importantes que não são explicados pelo áudio original.",
+                    "Inserir comentários críticos sobre a qualidade estética da produção do vídeo.",
+                    "Traduzir as falas para a Língua Brasileira de Sinais (LIBRAS) em formato de áudio."
+                ],
+                a: 1,
+                e: "A audiodescrição serve para 'pintar com palavras' o que o usuário cego não pode ver mas que é essencial para o sentido."
+            },
+            {
+                title: "Cidadania Digital",
+                concept: "Hoje, o acesso a serviços públicos (votação, impostos, agendamentos) é majoritariamente digital. Sem inclusão digital, o cidadão fica impedido de exercer plenamente seus direitos e deveres.",
+                q: "Por que a acessibilidade digital é considerada um direito fundamental para a cidadania?",
+                o: [
+                    "Porque sem ela, o cidadão fica impedido de acessar serviços públicos e informações governamentais.",
+                    "Porque garante que todas as pessoas possam comprar produtos em sites de e-commerce internacionais.",
+                    "Porque permite que qualquer pessoa se torne um influenciador digital de sucesso nas redes sociais.",
+                    "Porque obriga as empresas privadas a oferecerem internet gratuita em todos os estabelecimentos."
+                ],
+                a: 0,
+                e: "Estar fora do digital hoje é, infelizmente, estar parcialmente excluído da vida cívica moderna."
+            },
+            {
+                title: "Linguagem Simples",
+                concept: "A linguagem simples propõe textos curtos, sem jargões e bem estruturados. Ela ajuda pessoas com deficiência cognitiva, dislexia, baixo letramento ou que não dominam o idioma local.",
+                q: "Adotar 'Linguagem Simples' em um portal de notícias significa:",
+                o: [
+                    "Reduzir a complexidade do vocabulário e a extensão das frases para facilitar a compreensão.",
+                    "Utilizar gírias e abreviações comuns de redes sociais para parecer mais jovem.",
+                    "Tratar o leitor como uma criança, ignorando temas complexos ou sérios.",
+                    "Remover todas as imagens e vídeos para focar exclusivamente em textos curtos."
+                ],
+                a: 0,
+                e: "Linguagem simples é sobre clareza e eficácia na comunicação, não sobre infantilização do conteúdo."
+            },
+            {
+                title: "Acessibilidade Mobile",
+                concept: "Para muitas pessoas em vulnerabilidade, o celular é o único meio de acesso à internet. Por isso, sites e apps devem ser leves e totalmente acessíveis em telas pequenas e via toque.",
+                q: "O que caracteriza um design responsivo verdadeiramente acessível no celular?",
+                o: [
+                    "Garantir que todos os elementos visuais sejam reduzidos de tamanho para caber na tela.",
+                    "Manter alvos de toque grandes e garantir que a navegação funcione sem depender de gestos complexos.",
+                    "Forçar o usuário a girar o celular para a posição horizontal para conseguir ler os textos.",
+                    "Remover 50% das funcionalidades do site original para que ele carregue mais rápido."
+                ],
+                a: 1,
+                e: "Alvos de toque pequenos e gestos que exigem muita precisão motora são grandes barreiras no mobile."
+            },
+            {
+                title: "Leitores de Tela",
+                concept: "São softwares (como NVDA ou TalkBack) que convertem o texto da tela em fala ou braille. Eles dependem de um código bem estruturado (HTML semântico) para funcionar corretamente.",
+                q: "Por que o uso de tags HTML semânticas (como &lt;nav&gt; ou &lt;main&gt;) é vital para leitores de tela?",
+                o: [
+                    "Porque elas deixam o código visualmente mais organizado para os desenvolvedores.",
+                    "Porque elas permitem que o leitor de tela identifique e pule rapidamente para diferentes seções da página.",
+                    "Porque elas aumentam automaticamente a velocidade da voz sintética do software.",
+                    "Porque elas são obrigatórias para que o site seja aceito em dispositivos da Apple."
+                ],
+                a: 1,
+                e: "Tags semânticas criam marcos de navegação que permitem ao usuário cego 'escanear' a página por seções."
+            },
+            {
+                title: "Desenho Universal",
+                concept: "É a concepção de produtos e ambientes para serem usados por todos, na maior medida possível, sem necessidade de adaptação ou projeto específico para cada tipo de deficiência.",
+                q: "Qual o benefício secundário de um projeto baseado no Desenho Universal?",
+                o: [
+                    "Ele acaba beneficiando também pessoas sem deficiência (ex: rampas que ajudam quem usa carrinhos de bebê).",
+                    "Ele torna o produto final muito mais caro e exclusivo para um nicho de mercado.",
+                    "Ele permite que o governo reduza os impostos para as empresas que adotam esse padrão.",
+                    "Ele substitui a necessidade de seguir leis locais de acessibilidade, pois já é um padrão global."
+                ],
+                a: 0,
+                e: "O Desenho Universal prova que o que é bom para a acessibilidade, geralmente é melhor para todos."
+            },
+            {
+                title: "Cores e Contraste",
+                concept: "O contraste entre o texto e o fundo é essencial para que pessoas com baixa visão ou daltonismo consigam ler. Além disso, a cor nunca deve ser a única forma de transmitir uma informação, pois quem não enxerga cores pode perder o sentido da mensagem.",
+                q: "Ao criar um aviso de erro em um formulário, qual a prática mais acessível?",
+                o: [
+                    "Usar apenas a cor vermelha no texto para chamar a atenção rapidamente.",
+                    "Exibir o texto em vermelho acompanhado de um ícone de alerta e uma mensagem escrita explicativa.",
+                    "Colocar o fundo da página em preto com letras azuis escuras para poupar a visão.",
+                    "Utilizar uma fonte bem fina para que o erro não pareça agressivo ao usuário."
+                ],
+                a: 1,
+                e: "Combinar cores com símbolos e textos garante que a informação seja percebida mesmo por quem tem dificuldades visuais ou daltonismo."
+            }
+        ];
+
+        let state = {
+            phase: 'intro', // intro, learn, practice, result
+            idx: 0,
+            score: 0,
+            fontSize: 16,
+            answered: false,
+            lastCorrect: false
+        };
+
+        function render() {
+            const app = document.getElementById('app-container');
+            updateIndicators();
+            
+            if (state.phase === 'intro') {
+                app.innerHTML = `
+                    <div class="card" style="text-align:center;">
+                        <h2>Bem-vindo ao quiz de Acessibilidade e Inclusão Digital!</h2>
+                        <p style="margin:1.5rem 0; font-size:1.1rem; color:var(--text-color);">
+                            Este recurso foi desenvolvido para proporcionar um aprendizado <strong>inclusivo, didático e sem barreiras</strong>. 
+                            O objetivo é apresentar os fundamentos da acessibilidade e da inclusão digital de maneira clara e intuitiva, 
+                            focando na construção do conhecimento e na conscientização sobre o tema.
+                        </p>
+                        <p style="margin:1.5rem 0; font-size:1.2rem;">O recurso possui duas etapas:<br>
+                        <strong>1. Aprendizado:</strong> Conheça os conceitos fundamentais.<br>
+                        <strong>2. Prática:</strong> Fixe o que aprendeu com pequenos desafios.</p>
+                        <button class="btn-primary" onclick="startLearn()">Começar Aprendizado</button>
+                    </div>`;
+            } else if (state.phase === 'learn') {
+                const item = quizData[state.idx];
+                app.innerHTML = `
+                    <div class="card">
+                        <div class="badge">Conceito ${state.idx + 1} de ${quizData.length}</div>
+                        <h2>${item.title || "Conceito"}</h2>
+                        <div class="concept-box">
+                            <p>${item.concept}</p>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn-secondary" onclick="goBack()" aria-label="Voltar para etapa anterior">Voltar</button>
+                            <button class="btn-primary" onclick="startPractice()">Entendi! Ir para o desafio →</button>
+                        </div>
+                    </div>`;
+            } else if (state.phase === 'practice') {
+                const item = quizData[state.idx];
+                app.innerHTML = `
+                    <div class="card">
+                        <div class="progress-bar"><div class="progress-fill" style="width:${(state.idx / quizData.length) * 100}%"></div></div>
+                        <h2 class="question-text" id="q-text" tabindex="-1">${item.q}</h2>
+                        <div class="options-list">
+                            ${item.o.map((opt, i) => `
+                                <button class="option-btn" id="opt-${i}" onclick="checkAnswer(${i})">${opt}</button>
+                            `).join('')}
+                        </div>
+                        <div id="fb" class="feedback"></div>
+                        <div id="btn-actions" class="btn-group" style="${state.answered ? 'display:flex;' : 'display:none;'}">
+                            <button id="retry-btn" class="btn-secondary" onclick="retryQuestion()" style="${!state.lastCorrect ? 'display:block;' : 'display:none;'}">Tentar Novamente</button>
+                            <button id="next-btn" class="btn-primary" onclick="nextStep()" style="display:block;">
+                                ${state.idx === quizData.length - 1 ? "Ver Resultado Final" : "Próximo Conceito"}
+                            </button>
+                        </div>
+                        <div id="back-action" style="${!state.answered ? 'display:block;' : 'display:none;'} margin-top:1.5rem;">
+                            <button class="btn-secondary" onclick="goBack()" style="width:100%;">Voltar ao Conceito</button>
+                        </div>
+                    </div>`;
+                setTimeout(() => document.getElementById('q-text').focus(), 100);
+            } else if (state.phase === 'result') {
+                const pct = Math.round((state.score / quizData.length) * 100);
+                app.innerHTML = `
+                    <div class="card" style="text-align:center;">
+                        <h2>Quiz Concluído!</h2>
+                        <div class="score-circle" style="font-size:3.5rem; color:var(--accent-color); margin:1.5rem 0;">${state.score} / ${quizData.length}</div>
+                        <p style="font-size:1.4rem; margin-bottom:1rem;">${pct}% de acerto</p>
+                        <p>${
+                            pct >= 70 ? "Parabéns! Você domina boa parte dos conceitos de acessibilidade e inclusão digital!" :
+                            pct >= 40 ? "Você está no caminho certo! Já conhece alguns conceitos importantes, mas ainda há pontos a revisar." :
+                            "Não desanime, continue explorando os conceitos para fortalecer seus conhecimentos sobre acessibilidade e inclusão digital!"
+                        }</p>
+                        <button class="btn-primary" style="margin-top:2rem;" onclick="location.reload()">Reiniciar Quiz</button>
+                    </div>`;
+            }
+        }
+
+        function updateIndicators() {
+            const l = document.getElementById('ph-learn');
+            const p = document.getElementById('ph-practice');
+            if (l && p) {
+                l.classList.toggle('active', state.phase === 'learn');
+                p.classList.toggle('active', state.phase === 'practice');
+            }
+        }
+
+        function startLearn() { state.phase = 'learn'; render(); }
+        function startPractice() { state.phase = 'practice'; state.answered = false; render(); }
+
+        function goBack() {
+            if (state.phase === 'learn') {
+                if (state.idx === 0) {
+                    state.phase = 'intro';
+                } else {
+                    state.idx--;
+                    state.phase = 'practice';
+                    state.answered = true;
+                    state.lastCorrect = true; 
+                }
+            } else if (state.phase === 'practice') {
+                state.phase = 'learn';
+            }
+            render();
+        }
+
+        function checkAnswer(i) {
+            if (state.answered) return;
+            state.answered = true;
+            const item = quizData[state.idx];
+            const fb = document.getElementById('fb');
+            const btns = document.querySelectorAll('.option-btn');
+            const btnActions = document.getElementById('btn-actions');
+            const backAction = document.getElementById('back-action');
+            const retryBtn = document.getElementById('retry-btn');
+            const nextBtn = document.getElementById('next-btn');
+            
+            btns.forEach(b => b.disabled = true);
+            btnActions.style.display = 'flex';
+            if (backAction) backAction.style.display = 'none';
+            
+            if (i === item.a) {
+                state.score++;
+                state.lastCorrect = true;
+                btns[i].classList.add('correct');
+                fb.innerHTML = `<span class="feedback-header">✨ Resposta Correta!</span> <p>${item.e}</p>`;
+                fb.className = 'feedback active';
+                nextBtn.style.display = 'block';
+                retryBtn.style.display = 'none';
+                nextBtn.focus();
+            } else {
+                state.lastCorrect = false;
+                btns[i].classList.add('wrong');
+                btns[item.a].classList.add('correct');
+                fb.innerHTML = `<span class="feedback-header">🔍 Vamos analisar o conceito?</span> <p>${item.e}</p>`;
+                fb.className = 'feedback active error';
+                retryBtn.style.display = 'block';
+                nextBtn.style.display = 'block';
+                retryBtn.focus();
+            }
+        }
+
+        function retryQuestion() {
+            state.answered = false;
+            render();
+        }
+
+        function nextStep() {
+            state.answered = false;
+            if (state.idx < quizData.length - 1) {
+                state.idx++;
+                state.phase = 'learn';
+                render();
+            } else {
+                state.phase = 'result';
+                render();
+            }
+        }
+
+        // Help Functions
+        function toggleHelp() {
+            const modal = document.getElementById('helpModal');
+            const content = document.getElementById('helpContent');
+            const title = document.getElementById('helpTitle');
+            const isHidden = modal.style.display === 'none' || modal.style.display === '';
+            
+            modal.style.display = isHidden ? 'flex' : 'none';
+            modal.setAttribute('aria-hidden', !isHidden);
+            
+            if (isHidden) {
+                // Reset de rolagem e foco no título para garantir início do texto
+                content.scrollTop = 0;
+                setTimeout(() => {
+                    title.focus();
+                }, 10);
+            }
+        }
+
+        function toggleAbout() {
+            const modal = document.getElementById('aboutModal');
+            const content = document.getElementById('aboutContent');
+            const title = document.getElementById('aboutTitle');
+            const isHidden = modal.style.display === 'none' || modal.style.display === '';
+            
+            modal.style.display = isHidden ? 'flex' : 'none';
+            modal.setAttribute('aria-hidden', !isHidden);
+            
+            if (isHidden) {
+                content.scrollTop = 0;
+                setTimeout(() => {
+                    title.focus();
+                }, 10);
+            }
+        }
+
+        // A11y Functions
+        function changeFontSize(delta) {
+            state.fontSize = Math.min(Math.max(state.fontSize + delta, 12), 32);
+            document.documentElement.style.setProperty('--base-font-size', state.fontSize + 'px');
+        }
+
+        function toggleContrast() {
+            document.body.classList.toggle('high-contrast');
+            const isHigh = document.body.classList.contains('high-contrast');
+            document.getElementById('contrastBtn').textContent = isHigh ? "Modo Normal" : "Ativar Alto Contraste";
+        }
+
+        // Função auxiliar para rolar a página para o topo em transições
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Sobrescrever funções de navegação para incluir scroll
+        const originalRender = render;
+        render = function() {
+            originalRender();
+            scrollToTop();
+        };
+
+        render();
+    </script>
+</body>
+</html>
