@@ -311,7 +311,24 @@
             .card { padding: 1.5rem; }
             h1 { font-size: 1.7rem; }
             .btn-group { flex-direction: column; }
-            .a11y-controls { display: flex; justify-content: center; }
+            .a11y-controls { 
+                display: flex; 
+                flex-direction: column; 
+                align-items: flex-end;
+                gap: 0.8rem; 
+                padding: 1rem;
+            }
+            .a11y-group-left, .a11y-group-center {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-end;
+                width: 100%;
+                gap: 0.5rem;
+            }
+            .a11y-controls button {
+                width: 100%;
+                margin: 0;
+            }
         }
     </style>
 </head>
@@ -347,17 +364,21 @@
 
     <div id="aboutModal" class="modal-overlay" role="dialog" aria-labelledby="aboutTitle" aria-hidden="true">
         <div class="modal-content" id="aboutContent">
-            <h3 id="aboutTitle" tabindex="-1">Sobre o Projeto</h3>
+            <h3 id="aboutTitle" tabindex="-1">Sobre o Recurso (REA)</h3>
             <div style="font-size: 1.1rem; line-height: 1.6;">
-                <p style="margin-bottom: 1rem;">Este quiz é um <strong>Recurso Educacional Aberto (REA)</strong> desenvolvido como parte da disciplina de <strong>Acessibilidade e Inclusão Digital</strong>.</p>
-                <p style="margin-bottom: 1rem;">O objetivo é promover o conhecimento sobre práticas inclusivas no ambiente digital através de <strong>13 questões</strong> que abordam desde conceitos fundamentais até técnicas de desenvolvimento.</p>
-                <p style="margin-bottom: 0.5rem;"><strong>Autores:</strong></p>
-                <ul style="margin-left: 1.5rem; margin-bottom: 1rem;">
-                    <li>Antone Salbego</li>
-                    <li>Francys Ribeiro</li>
-                    <li>Lucas Correa</li>
-                </ul>
-                <p>O desenvolvimento contou com o auxílio do <strong>Gemini CLI</strong> para suporte na programação e estruturação do código.</p>
+                <p style="margin-bottom: 1rem;">Este quiz é um <strong>Recurso Educacional Aberto (REA)</strong> desenvolvido para a disciplina de <strong>Acessibilidade e Inclusão Digital</strong>.</p>
+                
+                <p style="margin-bottom: 0.5rem;"><strong>Autores:</strong> Antone Salbego, Francys Ribeiro e Lucas Correa.</p>
+                <p style="margin-bottom: 1rem;"><strong>Local e Data:</strong> Porto Alegre, RS - Junho de 2024.</p>
+
+                <p style="margin-bottom: 1rem;"><strong>Declaração sobre o Uso de IA:</strong><br>
+                Este recurso foi desenvolvido com o suporte da Inteligência Artificial <strong>Gemini CLI</strong>. A IA auxiliou na estruturação lógica do código JavaScript, na revisão técnica das diretrizes de acessibilidade e na geração de textos explicativos para os feedbacks do quiz, garantindo clareza e precisão pedagógica.</p>
+
+                <p style="margin-bottom: 1rem;"><strong>Licença:</strong><br>
+                Este recurso está sob a licença <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank">Creative Commons Atribuição 4.0 Internacional (CC BY 4.0)</a>. Você é livre para compartilhar e adaptar o material, desde que atribua o crédito aos autores originais.</p>
+
+                <p style="margin-bottom: 1rem;"><strong>Objetivos Educacionais:</strong><br>
+                Promover o letramento digital e a conscientização sobre práticas inclusivas no desenvolvimento e consumo de conteúdos web.</p>
             </div>
             <button class="modal-close-large" onclick="toggleAbout()">Fechar Sobre</button>
         </div>
@@ -395,7 +416,7 @@
                     "É a prática de disponibilizar o código-fonte de todos os softwares na internet."
                 ],
                 a: 1,
-                e: "O foco central é remover obstáculos para que a deficiência não impeça o uso pleno da tecnologia."
+                e: "O foco central é remover obstáculos para que a deficiência não impede o uso pleno da tecnologia."
             },
             {
                 title: "Inclusão Digital",
@@ -555,16 +576,40 @@
             }
         ];
 
+        function getOptimalFontSize() {
+            const width = window.innerWidth;
+            // Boost de 200% (32px) estritamente para mobile (telas pequenas)
+            if (width <= 600) return 32; 
+            // Notebooks (incluindo 14"), tablets landscape e desktops ficam no padrão de 16px
+            return 16;
+        }
+
         let state = {
             phase: 'intro',
             idx: 0,
             score: 0,
-            fontSize: 16,
+            fontSize: getOptimalFontSize(),
+            manualFontAdjust: false,
             answered: false,
             lastCorrect: false,
             shuffledOptions: [],
             persistentAnswers: new Array(quizData.length).fill(null)
         };
+
+        // Aplica o tamanho inicial
+        document.documentElement.style.setProperty('--base-font-size', state.fontSize + 'px');
+
+        // Ajuste automático reativo (ex: girar o celular)
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                if (!state.manualFontAdjust) {
+                    state.fontSize = getOptimalFontSize();
+                    document.documentElement.style.setProperty('--base-font-size', state.fontSize + 'px');
+                }
+            }, 250);
+        });
 
         function shuffleArray(array) {
             const newArr = [...array];
@@ -823,7 +868,8 @@
         }
 
         function changeFontSize(delta) {
-            state.fontSize = Math.min(Math.max(state.fontSize + delta, 12), 32);
+            state.manualFontAdjust = true; // Marca que o usuário escolheu um tamanho manualmente
+            state.fontSize = Math.min(Math.max(state.fontSize + delta, 12), 48);
             document.documentElement.style.setProperty('--base-font-size', state.fontSize + 'px');
         }
 
