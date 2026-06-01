@@ -871,7 +871,7 @@
         function toggleHelp() {
             const modal = document.getElementById('helpModal');
             const content = document.getElementById('helpContent');
-            const title = document.getElementById('helpTitle');
+            const closeBtn = modal.querySelector('.modal-close-top');
             const isHidden = modal.style.display === 'none' || modal.style.display === '';
             
             modal.style.display = isHidden ? 'flex' : 'none';
@@ -881,7 +881,7 @@
             if (isHidden) {
                 content.scrollTop = 0;
                 setTimeout(() => {
-                    title.focus();
+                    closeBtn.focus();
                 }, 10);
             }
         }
@@ -889,7 +889,7 @@
         function toggleAbout() {
             const modal = document.getElementById('aboutModal');
             const content = document.getElementById('aboutContent');
-            const title = document.getElementById('aboutTitle');
+            const closeBtn = modal.querySelector('.modal-close-top');
             const isHidden = modal.style.display === 'none' || modal.style.display === '';
             
             modal.style.display = isHidden ? 'flex' : 'none';
@@ -899,7 +899,7 @@
             if (isHidden) {
                 content.scrollTop = 0;
                 setTimeout(() => {
-                    title.focus();
+                    closeBtn.focus();
                 }, 10);
             }
         }
@@ -923,13 +923,9 @@
             // Lógica de Scroll com W e S
             if (key === 'w' || key === 's') {
                 if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-                
                 const scrollStep = 100;
                 const direction = key === 'w' ? -1 : 1;
-                
-                // Verifica se há um modal aberto para rolar o conteúdo dele
                 const activeModalBody = document.querySelector('.modal-overlay[style*="display: flex"] .modal-body');
-                
                 if (activeModalBody) {
                     activeModalBody.scrollBy({ top: direction * scrollStep, behavior: 'smooth' });
                 } else {
@@ -939,30 +935,48 @@
                 return;
             }
 
-            if (['arrowleft', 'arrowright', 'a', 'd'].includes(key)) {
-                // Se estiver digitando em algum campo, ignorar
+            // Lógica de Navegação entre Elementos (Setas e AD)
+            const isNextKey = ['arrowright', 'arrowdown', 'd', 's'].includes(key) && !['w', 's'].includes(key); // W/S são scroll
+            const isPrevKey = ['arrowleft', 'arrowup', 'a', 'w'].includes(key) && !['w', 's'].includes(key);
+
+            // Re-checa se é uma tecla de navegação (excluindo as de scroll já tratadas)
+            if (['arrowleft', 'arrowright', 'arrowup', 'arrowdown', 'a', 'd'].includes(key)) {
                 if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
-                const focusableElements = Array.from(document.querySelectorAll('button, [href], input, select, textarea, [tabindex="0"]'))
-                    .filter(el => {
-                        const style = window.getComputedStyle(el);
-                        return style.display !== 'none' && style.visibility !== 'hidden' && !el.disabled;
-                    });
+                // 1. Identifica se há modal aberto
+                const activeModal = Array.from(document.querySelectorAll('.modal-overlay'))
+                    .find(m => window.getComputedStyle(m).display !== 'none');
+
+                // 2. Coleta todos os potenciais elementos focáveis
+                const allElements = Array.from(document.querySelectorAll('button, a[href], input, select, textarea, [tabindex="0"]'));
+
+                // 3. Filtra apenas os que estão visíveis e no escopo correto (dentro ou fora do modal)
+                const focusableElements = allElements.filter(el => {
+                    // Checa visibilidade real
+                    const rect = el.getBoundingClientRect();
+                    const isVisible = rect.width > 0 && rect.height > 0 && window.getComputedStyle(el).visibility !== 'hidden';
+                    if (!isVisible || el.disabled || el.tabIndex === -1) return false;
+
+                    const elModal = el.closest('.modal-overlay');
+                    if (activeModal) {
+                        return elModal === activeModal; // Apenas elementos do modal ativo
+                    } else {
+                        return !elModal; // Apenas elementos fora de qualquer modal
+                    }
+                });
 
                 if (focusableElements.length === 0) return;
 
                 const currentIndex = focusableElements.indexOf(document.activeElement);
                 let nextIndex;
 
-                if (key === 'arrowleft' || key === 'a') {
-                    // Esquerda ou A para o anterior
+                if (key === 'arrowleft' || key === 'arrowup' || key === 'a') {
                     nextIndex = currentIndex <= 0 ? focusableElements.length - 1 : currentIndex - 1;
-                } else if (key === 'arrowright' || key === 'd') {
-                    // Direita ou D para o próximo
-                    nextIndex = currentIndex >= focusableElements.length - 1 || currentIndex === -1 ? 0 : currentIndex + 1;
+                } else if (key === 'arrowright' || key === 'arrowdown' || key === 'd') {
+                    nextIndex = (currentIndex === -1 || currentIndex >= focusableElements.length - 1) ? 0 : currentIndex + 1;
                 }
 
-                if (nextIndex !== undefined) {
+                if (nextIndex !== undefined && focusableElements[nextIndex]) {
                     focusableElements[nextIndex].focus();
                     e.preventDefault(); 
                 }
