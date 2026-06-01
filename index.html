@@ -41,12 +41,11 @@
             flex-direction: column;
         }
 
-        /* Access Controls Header */
         .a11y-controls {
             background-color: var(--primary-color);
             padding: 0.8rem;
             display: grid;
-            grid-template-columns: 1fr auto 1fr; /* Ajuda esq | Centro | Vazio dir */
+            grid-template-columns: 1fr auto 1fr;
             align-items: center;
             position: sticky;
             top: 0;
@@ -78,7 +77,6 @@
             color: #2c3e50;
         }
 
-        /* Botão de Ajuda Padronizado */
         .btn-help-header {
             background-color: #ffffff !important;
             color: #2c3e50 !important;
@@ -102,7 +100,6 @@
             outline-offset: 2px;
         }
 
-        /* Help Modal */
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -152,7 +149,6 @@
         }
         .high-contrast .help-list li { border-bottom-color: #ffff00; }
 
-        /* Layout */
         .container {
             max-width: 850px;
             margin: 1.5rem auto;
@@ -165,7 +161,6 @@
         h1 { font-size: 2.2rem; color: var(--primary-color); margin-bottom: 0.5rem; }
         .high-contrast h1 { color: #ffff00; }
 
-        /* Phase Indicator */
         .phase-indicator {
             display: flex;
             justify-content: center;
@@ -184,7 +179,6 @@
         .phase-step.active { color: var(--accent-color); border-bottom: 3px solid var(--accent-color); }
         .high-contrast .phase-step.active { color: #ffff00; border-bottom-color: #ffff00; }
 
-        /* Progress */
         .progress-bar {
             height: 10px;
             background-color: #ddd;
@@ -199,7 +193,6 @@
             transition: width 0.4s ease;
         }
 
-        /* Card */
         .card {
             background-color: var(--card-bg);
             border-radius: 12px;
@@ -212,7 +205,6 @@
 
         .high-contrast .card { border: 2px solid #ffff00; box-shadow: none; }
 
-        /* Content Elements */
         .badge {
             display: inline-block;
             background-color: var(--primary-color);
@@ -304,7 +296,6 @@
         .high-contrast .btn-primary { background-color: #ffff00; color: #000; }
         .high-contrast .btn-secondary { background-color: #000; color: #ffff00; border: 2px solid #ffff00; }
 
-        /* Footer */
         footer {
             margin-top: auto;
             padding: 2.5rem 1rem;
@@ -338,7 +329,6 @@
         </div>
     </nav>
 
-    <!-- Modal de Ajuda -->
     <div id="helpModal" class="modal-overlay" role="dialog" aria-labelledby="helpTitle" aria-hidden="true">
         <div class="modal-content" id="helpContent">
             <h3 id="helpTitle" tabindex="-1">Guia de Uso do Quiz</h3>
@@ -355,7 +345,6 @@
         </div>
     </div>
 
-    <!-- Modal de Sobre -->
     <div id="aboutModal" class="modal-overlay" role="dialog" aria-labelledby="aboutTitle" aria-hidden="true">
         <div class="modal-content" id="aboutContent">
             <h3 id="aboutTitle" tabindex="-1">Sobre o Projeto</h3>
@@ -384,7 +373,6 @@
         </header>
 
         <main id="app-container">
-            <!-- Conteúdo dinâmico -->
         </main>
     </div>
 
@@ -417,7 +405,7 @@
                     "Porque celulares são dispositivos limitados e apenas computadores geram inclusão real.",
                     "Porque a inclusão depende também de uma conexão estável e das competências para usar as ferramentas.",
                     "Porque os aplicativos de redes sociais são os únicos que realmente promovem a inclusão.",
-                    "Porque a inclusão digital é um conceito que se aplica apenas ao ambiente escolar e acadêmico."
+                    "Porque a inclusão digital é um concept que se aplica apenas ao ambiente escolar e acadêmico."
                 ],
                 a: 1,
                 e: "Sem saber usar (letramento) ou sem conexão de qualidade, o equipamento sozinho não gera inclusão efetiva."
@@ -568,13 +556,23 @@
         ];
 
         let state = {
-            phase: 'intro', // intro, learn, practice, result
+            phase: 'intro',
             idx: 0,
             score: 0,
             fontSize: 16,
             answered: false,
-            lastCorrect: false
+            lastCorrect: false,
+            shuffledOptions: []
         };
+
+        function shuffleArray(array) {
+            const newArr = [...array];
+            for (let i = newArr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
+            }
+            return newArr;
+        }
 
         function render() {
             const app = document.getElementById('app-container');
@@ -615,8 +613,8 @@
                         <div class="progress-bar"><div class="progress-fill" style="width:${(state.idx / quizData.length) * 100}%"></div></div>
                         <h2 class="question-text" id="q-text" tabindex="-1">${item.q}</h2>
                         <div class="options-list">
-                            ${item.o.map((opt, i) => `
-                                <button class="option-btn" id="opt-${i}" onclick="checkAnswer(${i})">${opt}</button>
+                            ${state.shuffledOptions.map((opt, i) => `
+                                <button class="option-btn" id="opt-${i}" onclick="checkAnswer(${i})" ${state.answered ? 'disabled' : ''}>${opt.text}</button>
                             `).join('')}
                         </div>
                         <div id="fb" class="feedback"></div>
@@ -630,6 +628,15 @@
                             <button class="btn-secondary" onclick="goBack()" style="width:100%;">Voltar ao Conceito</button>
                         </div>
                     </div>`;
+                
+                if (state.answered) {
+                    const correctShuffledIdx = state.shuffledOptions.findIndex(o => o.originalIndex === item.a);
+                    const fb = document.getElementById('fb');
+                    document.getElementById(`opt-${correctShuffledIdx}`).classList.add('correct');
+                    fb.innerHTML = `<span class="feedback-header">${state.lastCorrect ? "✨ Resposta Correta!" : "🔍 Vamos analisar o conceito?"}</span> <p>${item.e}</p>`;
+                    fb.className = `feedback active ${state.lastCorrect ? "" : "error"}`;
+                }
+
                 setTimeout(() => document.getElementById('q-text').focus(), 100);
             } else if (state.phase === 'result') {
                 const pct = Math.round((state.score / quizData.length) * 100);
@@ -658,7 +665,14 @@
         }
 
         function startLearn() { state.phase = 'learn'; render(); }
-        function startPractice() { state.phase = 'practice'; state.answered = false; render(); }
+        
+        function startPractice() { 
+            state.phase = 'practice'; 
+            state.answered = false; 
+            const item = quizData[state.idx];
+            state.shuffledOptions = shuffleArray(item.o.map((opt, i) => ({ text: opt, originalIndex: i })));
+            render(); 
+        }
 
         function goBack() {
             if (state.phase === 'learn') {
@@ -667,8 +681,9 @@
                 } else {
                     state.idx--;
                     state.phase = 'practice';
-                    state.answered = true;
-                    state.lastCorrect = true; 
+                    state.answered = false;
+                    const item = quizData[state.idx];
+                    state.shuffledOptions = item.o.map((opt, i) => ({ text: opt, originalIndex: i }));
                 }
             } else if (state.phase === 'practice') {
                 state.phase = 'learn';
@@ -691,7 +706,10 @@
             btnActions.style.display = 'flex';
             if (backAction) backAction.style.display = 'none';
             
-            if (i === item.a) {
+            const selectedOpt = state.shuffledOptions[i];
+            const correctShuffledIdx = state.shuffledOptions.findIndex(o => o.originalIndex === item.a);
+
+            if (selectedOpt.originalIndex === item.a) {
                 state.score++;
                 state.lastCorrect = true;
                 btns[i].classList.add('correct');
@@ -703,7 +721,7 @@
             } else {
                 state.lastCorrect = false;
                 btns[i].classList.add('wrong');
-                btns[item.a].classList.add('correct');
+                btns[correctShuffledIdx].classList.add('correct');
                 fb.innerHTML = `<span class="feedback-header">🔍 Vamos analisar o conceito?</span> <p>${item.e}</p>`;
                 fb.className = 'feedback active error';
                 retryBtn.style.display = 'block';
@@ -729,7 +747,6 @@
             }
         }
 
-        // Help Functions
         function toggleHelp() {
             const modal = document.getElementById('helpModal');
             const content = document.getElementById('helpContent');
@@ -740,7 +757,6 @@
             modal.setAttribute('aria-hidden', !isHidden);
             
             if (isHidden) {
-                // Reset de rolagem e foco no título para garantir início do texto
                 content.scrollTop = 0;
                 setTimeout(() => {
                     title.focus();
@@ -765,7 +781,6 @@
             }
         }
 
-        // A11y Functions
         function changeFontSize(delta) {
             state.fontSize = Math.min(Math.max(state.fontSize + delta, 12), 32);
             document.documentElement.style.setProperty('--base-font-size', state.fontSize + 'px');
@@ -777,12 +792,10 @@
             document.getElementById('contrastBtn').textContent = isHigh ? "Modo Normal" : "Ativar Alto Contraste";
         }
 
-        // Função auxiliar para rolar a página para o topo em transições
         function scrollToTop() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // Sobrescrever funções de navegação para incluir scroll
         const originalRender = render;
         render = function() {
             originalRender();
