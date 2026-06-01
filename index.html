@@ -390,7 +390,7 @@
                 <ul class="help-list">
                     <li><strong>🖱️ Com o Mouse:</strong> Clique nos botões para selecionar respostas ou avançar. Você também pode clicar e arrastar a barra de rolagem lateral para navegar.</li>
                     <li><strong>📱 No Smartphone:</strong> Toque com o dedo diretamente sobre os botões e alternativas. Use a <strong>ação de pinça</strong> (dois dedos) para dar zoom na tela e arraste o dedo para rolar a página.</li>
-                    <li><strong>⌨️ Com o Teclado:</strong> Use a tecla <strong>Tab</strong> para navegar entre os elementos e <strong>Enter</strong> ou <strong>Espaço</strong> para ativar os botões. Use as <strong>setas (cima/baixo)</strong>, <strong>Page Up</strong> ou <strong>Page Down</strong> para mexer a barra de rolagem.</li>
+                    <li><strong>⌨️ Com o Teclado:</strong> Use as teclas <strong>A e D</strong> ou <strong>Tab</strong> para navegar entre os elementos e <strong>Enter</strong> ou <strong>Espaço</strong> para ativar os botões. Use as <strong>setas (cima/baixo)</strong>, <strong>Page Up</strong> ou <strong>Page Down</strong> para mexer a barra de rolagem.</li>
                     <li><strong>🔍 Acessibilidade:</strong> Use os botões no topo para aumentar a letra (A+) ou ativar o modo de Alto Contraste se tiver dificuldade de visão.</li>
                     <li><strong>📖 Aprendizado e Prática:</strong> Leia primeiro o conceito teórico e depois clique em "Ir para o desafio" para responder a pergunta.</li>
                     <li><strong>🔄 Refazer:</strong> Se errar, você pode clicar em "Tentar Novamente" para revisar a questão.</li>
@@ -920,11 +920,11 @@
         window.addEventListener('keydown', (e) => {
             const key = e.key.toLowerCase();
             
-            // Lógica de Scroll com W e S
-            if (key === 'w' || key === 's') {
+            // Lógica de Scroll com W, S, ArrowUp e ArrowDown
+            if (['w', 's', 'arrowup', 'arrowdown'].includes(key)) {
                 if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
                 const scrollStep = 100;
-                const direction = key === 'w' ? -1 : 1;
+                const direction = (key === 'w' || key === 'arrowup') ? -1 : 1;
                 const activeModalBody = document.querySelector('.modal-overlay[style*="display: flex"] .modal-body');
                 if (activeModalBody) {
                     activeModalBody.scrollBy({ top: direction * scrollStep, behavior: 'smooth' });
@@ -935,12 +935,8 @@
                 return;
             }
 
-            // Lógica de Navegação entre Elementos (Setas e AD)
-            const isNextKey = ['arrowright', 'arrowdown', 'd', 's'].includes(key) && !['w', 's'].includes(key); // W/S são scroll
-            const isPrevKey = ['arrowleft', 'arrowup', 'a', 'w'].includes(key) && !['w', 's'].includes(key);
-
-            // Re-checa se é uma tecla de navegação (excluindo as de scroll já tratadas)
-            if (['arrowleft', 'arrowright', 'arrowup', 'arrowdown', 'a', 'd'].includes(key)) {
+            // Lógica de Navegação entre Elementos (Setas Laterais e AD)
+            if (['arrowleft', 'arrowright', 'a', 'd'].includes(key)) {
                 if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
                 // 1. Identifica se há modal aberto
@@ -952,16 +948,15 @@
 
                 // 3. Filtra apenas os que estão visíveis e no escopo correto (dentro ou fora do modal)
                 const focusableElements = allElements.filter(el => {
-                    // Checa visibilidade real
                     const rect = el.getBoundingClientRect();
                     const isVisible = rect.width > 0 && rect.height > 0 && window.getComputedStyle(el).visibility !== 'hidden';
                     if (!isVisible || el.disabled || el.tabIndex === -1) return false;
 
                     const elModal = el.closest('.modal-overlay');
                     if (activeModal) {
-                        return elModal === activeModal; // Apenas elementos do modal ativo
+                        return elModal === activeModal;
                     } else {
-                        return !elModal; // Apenas elementos fora de qualquer modal
+                        return !elModal;
                     }
                 });
 
@@ -970,9 +965,9 @@
                 const currentIndex = focusableElements.indexOf(document.activeElement);
                 let nextIndex;
 
-                if (key === 'arrowleft' || key === 'arrowup' || key === 'a') {
+                if (key === 'arrowleft' || key === 'a') {
                     nextIndex = currentIndex <= 0 ? focusableElements.length - 1 : currentIndex - 1;
-                } else if (key === 'arrowright' || key === 'arrowdown' || key === 'd') {
+                } else if (key === 'arrowright' || key === 'd') {
                     nextIndex = (currentIndex === -1 || currentIndex >= focusableElements.length - 1) ? 0 : currentIndex + 1;
                 }
 
