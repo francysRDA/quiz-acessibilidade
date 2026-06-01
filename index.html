@@ -43,9 +43,9 @@
 
         .a11y-controls {
             background-color: var(--primary-color);
-            padding: 0.8rem;
-            display: grid;
-            grid-template-columns: 1fr auto 1fr;
+            padding: 0.8rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
             align-items: center;
             position: sticky;
             top: 0;
@@ -53,16 +53,15 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
 
-        .a11y-group-center {
-            grid-column: 2;
+        .a11y-group-right {
             display: flex;
             gap: 1rem;
-            justify-content: center;
+            justify-content: flex-end;
         }
 
         .a11y-group-left {
-            grid-column: 1;
             display: flex;
+            gap: 0.8rem;
             justify-content: flex-start;
         }
 
@@ -100,6 +99,10 @@
             outline-offset: 2px;
         }
 
+        body.modal-open {
+            overflow: hidden;
+        }
+
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -112,33 +115,66 @@
         }
         .modal-content {
             background: var(--card-bg);
-            padding: 2.5rem;
             border-radius: 12px;
             max-width: 650px;
             width: 100%;
             max-height: 90vh;
-            overflow-y: auto;
             position: relative;
             color: var(--text-color);
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
-        .high-contrast .modal-content { border: 4px solid #ffff00; }
-        
-        .modal-close-large {
-            display: block;
-            width: 100%;
-            background: var(--error-color);
-            color: white;
-            border: none;
-            padding: 1.2rem;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 1.2rem;
-            margin-top: 2rem;
+        .modal-body {
+            padding: 2.5rem;
+            overflow-y: auto;
+            flex: 1;
+            /* Scrollbar mais fina para não atrapalhar */
+            scrollbar-width: thin;
+        }
+        .modal-body::-webkit-scrollbar {
+            width: 8px;
+        }
+        .modal-body::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .modal-body::-webkit-scrollbar-thumb {
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+        }
+        .high-contrast .modal-body::-webkit-scrollbar-thumb {
+            background: #ffff00;
         }
 
-        .modal-content h3 { margin-bottom: 1.5rem; color: var(--primary-color); font-size: 1.8rem; text-align: center; outline: none; }
+        .modal-close-top {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            background: #e74c3c;
+            border: none;
+            font-size: 1.1rem;
+            cursor: pointer;
+            color: white;
+            padding: 0.6rem 1.2rem;
+            line-height: 1;
+            z-index: 1100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            transition: background-color 0.2s, transform 0.2s;
+            font-weight: bold;
+        }
+        .modal-close-top:hover { background-color: #c0392b; transform: scale(1.05); }
+        .high-contrast .modal-close-top { 
+            background: #000; 
+            color: #ffff00; 
+            border: 2px solid #ffff00; 
+        }
+        
+        .modal-content h3 { margin-bottom: 1.5rem; padding-right: 100px; color: var(--primary-color); font-size: 1.8rem; text-align: center; outline: none; }
         .high-contrast .modal-content h3 { color: #ffff00; }
         .help-list { list-style: none; }
         .help-list li { 
@@ -318,7 +354,7 @@
                 gap: 0.8rem; 
                 padding: 1rem;
             }
-            .a11y-group-left, .a11y-group-center {
+            .a11y-group-left, .a11y-group-right {
                 display: flex;
                 flex-direction: column;
                 align-items: flex-end;
@@ -335,11 +371,11 @@
 <body>
 
     <nav class="a11y-controls" aria-label="Controles de suporte e acessibilidade">
-        <div class="a11y-group-left" style="gap: 0.8rem;">
+        <div class="a11y-group-left">
             <button onclick="toggleHelp()" class="btn-help-header" aria-label="Abrir Guia de Ajuda">❓ Ajuda</button>
             <button onclick="toggleAbout()" class="btn-help-header" aria-label="Abrir Sobre o Projeto">ℹ️ Sobre</button>
         </div>
-        <div class="a11y-group-center">
+        <div class="a11y-group-right">
             <button onclick="changeFontSize(2)" aria-label="Aumentar texto">Aumentar Texto (A+)</button>
             <button onclick="changeFontSize(-2)" aria-label="Diminuir texto">Diminuir Texto (A-)</button>
             <button onclick="toggleContrast()" id="contrastBtn">Ativar Alto Contraste</button>
@@ -347,40 +383,44 @@
     </nav>
 
     <div id="helpModal" class="modal-overlay" role="dialog" aria-labelledby="helpTitle" aria-hidden="true">
-        <div class="modal-content" id="helpContent">
-            <h3 id="helpTitle" tabindex="-1">Guia de Uso do Quiz</h3>
-            <ul class="help-list">
-                <li><strong>🖱️ Com o Mouse:</strong> Clique nos botões para selecionar respostas ou avançar.</li>
-                <li><strong>📱 No Smartphone:</strong> Toque com o dedo diretamente sobre os botões e alternativas.</li>
-                <li><strong>⌨️ Com o Teclado:</strong> Use a tecla <strong>Tab</strong> para navegar entre os elementos e <strong>Enter</strong> ou <strong>Espaço</strong> para ativar os botões.</li>
-                <li><strong>🔍 Acessibilidade:</strong> Use os botões no topo para aumentar a letra (A+) ou ativar o modo de Alto Contraste se tiver dificuldade de visão..</li>
-                <li><strong>📖 Aprendizado e Prática:</strong> Leia primeiro o conceito teórico e depois clique em "Ir para o desafio" para responder a pergunta.</li>
-                <li><strong>🔄 Refazer:</strong> Se errar, você pode clicar em "Tentar Novamente" para revisar a questão.</li>
-                <li><strong>⬅️ Voltar:</strong> Você pode retornar para reler conceitos ou ver a questão anterior.</li>
-            </ul>
-            <button class="modal-close-large" onclick="toggleHelp()">Entendi, fechar guia</button>
+        <div class="modal-content">
+            <button class="modal-close-top" onclick="toggleHelp()" aria-label="Fechar Guia de Ajuda">Fechar</button>
+            <div class="modal-body" id="helpContent">
+                <h3 id="helpTitle" tabindex="-1">Guia de Uso do Quiz</h3>
+                <ul class="help-list">
+                    <li><strong>🖱️ Com o Mouse:</strong> Clique nos botões para selecionar respostas ou avançar. Você também pode clicar e arrastar a barra de rolagem lateral para navegar.</li>
+                    <li><strong>📱 No Smartphone:</strong> Toque com o dedo diretamente sobre os botões e alternativas. Use a <strong>ação de pinça</strong> (dois dedos) para dar zoom na tela e arraste o dedo para rolar a página.</li>
+                    <li><strong>⌨️ Com o Teclado:</strong> Use a tecla <strong>Tab</strong> para navegar entre os elementos e <strong>Enter</strong> ou <strong>Espaço</strong> para ativar os botões. Use as <strong>setas (cima/baixo)</strong>, <strong>Page Up</strong> ou <strong>Page Down</strong> para mexer a barra de rolagem.</li>
+                    <li><strong>🔍 Acessibilidade:</strong> Use os botões no topo para aumentar a letra (A+) ou ativar o modo de Alto Contraste se tiver dificuldade de visão.</li>
+                    <li><strong>📖 Aprendizado e Prática:</strong> Leia primeiro o conceito teórico e depois clique em "Ir para o desafio" para responder a pergunta.</li>
+                    <li><strong>🔄 Refazer:</strong> Se errar, você pode clicar em "Tentar Novamente" para revisar a questão.</li>
+                    <li><strong>⬅️ Voltar:</strong> Você pode retornar para reler conceitos ou ver a questão anterior.</li>
+                </ul>
+            </div>
         </div>
     </div>
 
     <div id="aboutModal" class="modal-overlay" role="dialog" aria-labelledby="aboutTitle" aria-hidden="true">
-        <div class="modal-content" id="aboutContent">
-            <h3 id="aboutTitle" tabindex="-1">Sobre o Recurso (REA)</h3>
-            <div style="font-size: 1.1rem; line-height: 1.6;">
-                <p style="margin-bottom: 1rem;">Este quiz é um <strong>Recurso Educacional Aberto (REA)</strong> desenvolvido para a disciplina de <strong>Acessibilidade e Inclusão Digital</strong>.</p>
-                
-                <p style="margin-bottom: 0.5rem;"><strong>Autores:</strong> Antone Salbego, Francys Ribeiro e Lucas Correa.</p>
-                <p style="margin-bottom: 1rem;"><strong>Local e Data:</strong> Porto Alegre, RS - Junho de 2024.</p>
+        <div class="modal-content">
+            <button class="modal-close-top" onclick="toggleAbout()" aria-label="Fechar Sobre o Projeto">Fechar</button>
+            <div class="modal-body" id="aboutContent">
+                <h3 id="aboutTitle" tabindex="-1">Sobre o Recurso (REA)</h3>
+                <div style="font-size: 1.1rem; line-height: 1.6;">
+                    <p style="margin-bottom: 1rem;">Este quiz é um <strong>Recurso Educacional Aberto (REA)</strong> desenvolvido para a disciplina de <strong>Acessibilidade e Inclusão Digital</strong>.</p>
+                    
+                    <p style="margin-bottom: 0.5rem;"><strong>Autores:</strong> Antone Salbego, Francys Ribeiro e Lucas Correa.</p>
+                    <p style="margin-bottom: 1rem;"><strong>Local e Data:</strong> Alegrete, RS - Início 18/05/26 - Fim 01/06/26.</p>
 
-                <p style="margin-bottom: 1rem;"><strong>Declaração sobre o Uso de IA:</strong><br>
-                Este recurso foi desenvolvido com o suporte da Inteligência Artificial <strong>Gemini CLI</strong>. A IA auxiliou na estruturação lógica do código JavaScript, na revisão técnica das diretrizes de acessibilidade e na geração de textos explicativos para os feedbacks do quiz, garantindo clareza e precisão pedagógica.</p>
+                    <p style="margin-bottom: 1rem;"><strong>Declaração sobre o Uso de IA:</strong><br>
+                    Este recurso foi desenvolvido com o suporte da Inteligência Artificial <strong>Gemini CLI</strong>. A IA auxiliou na estruturação lógica do código JavaScript, na revisão técnica das diretrizes de acessibilidade e na geração de textos explicativos para os feedbacks do quiz, garantindo clareza e precisão pedagógica.</p>
 
-                <p style="margin-bottom: 1rem;"><strong>Licença:</strong><br>
-                Este recurso está sob a licença <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank">Creative Commons Atribuição 4.0 Internacional (CC BY 4.0)</a>. Você é livre para compartilhar e adaptar o material, desde que atribua o crédito aos autores originais.</p>
+                    <p style="margin-bottom: 1rem;"><strong>Licença:</strong><br>
+                    Este recurso está sob a licença <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank">Creative Commons Atribuição 4.0 Internacional (CC BY 4.0)</a>. Você é livre para compartilhar e adaptar o material, desde que atribua o crédito aos autores originais.</p>
 
-                <p style="margin-bottom: 1rem;"><strong>Objetivos Educacionais:</strong><br>
-                Promover o letramento digital e a conscientização sobre práticas inclusivas no desenvolvimento e consumo de conteúdos web.</p>
+                    <p style="margin-bottom: 1rem;"><strong>Objetivos Educacionais:</strong><br>
+                    Promover o letramento digital e a conscientização sobre práticas inclusivas no desenvolvimento e consumo de conteúdos web.</p>
+                </div>
             </div>
-            <button class="modal-close-large" onclick="toggleAbout()">Fechar Sobre</button>
         </div>
     </div>
 
@@ -404,6 +444,12 @@
     </footer>
 
     <script>
+        // Força a barra de rolagem a voltar para o topo ao recarregar a página
+        if ('scrollRestoration' in history) {
+            history.scrollRestoration = 'manual';
+        }
+        window.scrollTo(0, 0);
+
         const quizData = [
             {
                 title: "O que é Acessibilidade Digital?",
@@ -580,7 +626,9 @@
             const width = window.innerWidth;
             // Boost de 200% (32px) estritamente para mobile (telas pequenas)
             if (width <= 600) return 32; 
-            // Notebooks (incluindo 14"), tablets landscape e desktops ficam no padrão de 16px
+            // Notebooks menores que 17" (lógica de largura < 1600px): 14px (87.5% de 16px)
+            if (width < 1600) return 14;
+            // Desktops e notebooks grandes (17"+): 16px
             return 16;
         }
 
@@ -621,6 +669,7 @@
         }
 
         function render() {
+            window.scrollTo(0, 0);
             const app = document.getElementById('app-container');
             updateIndicators();
             
@@ -638,7 +687,6 @@
                         <strong>2. Prática:</strong> Fixe o que aprendeu com pequenos desafios.</p>
                         <button class="btn-primary" onclick="startLearn()">Começar Aprendizado</button>
                     </div>`;
-                window.scrollTo({ top: 0, behavior: 'smooth' });
             } else if (state.phase === 'learn') {
                 const item = quizData[state.idx];
                 app.innerHTML = `
@@ -653,7 +701,6 @@
                             <button class="btn-primary" onclick="startPractice()">Entendi! Ir para o desafio →</button>
                         </div>
                     </div>`;
-                window.scrollTo({ top: 0, behavior: 'smooth' });
             } else if (state.phase === 'practice') {
                 const item = quizData[state.idx];
                 const saved = state.persistentAnswers[state.idx];
@@ -684,18 +731,6 @@
                     document.getElementById(`opt-${correctShuffledIdx}`).classList.add('correct');
                     fb.innerHTML = `<span class="feedback-header">${state.lastCorrect ? "✨ Resposta Correta!" : "🔍 Vamos analisar o conceito?"}</span> <p>${item.e}</p>`;
                     fb.className = `feedback active ${state.lastCorrect ? "" : "error"}`;
-                    
-                    setTimeout(() => {
-                        const card = document.querySelector('.card');
-                        if (card) {
-                            const cardRect = card.getBoundingClientRect();
-                            const absoluteCardTop = cardRect.top + window.pageYOffset;
-                            const middle = absoluteCardTop - (window.innerHeight / 2) + (card.offsetHeight / 2);
-                            window.scrollTo({ top: middle, behavior: 'smooth' });
-                        }
-                    }, 100);
-                } else {
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
                 }
 
                 setTimeout(() => document.getElementById('q-text').focus(), 100);
@@ -713,7 +748,6 @@
                         }</p>
                         <button class="btn-primary" style="margin-top:2rem;" onclick="location.reload()">Reiniciar Quiz</button>
                     </div>`;
-                window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         }
 
@@ -806,12 +840,13 @@
             }
 
             setTimeout(() => {
-                const card = document.querySelector('.card');
-                if (card) {
-                    const cardRect = card.getBoundingClientRect();
-                    const absoluteCardTop = cardRect.top + window.pageYOffset;
-                    const middle = absoluteCardTop - (window.innerHeight / 2) + (card.offsetHeight / 2);
-                    window.scrollTo({ top: middle, behavior: 'smooth' });
+                const fb = document.getElementById('fb');
+                if (fb) {
+                    const fbRect = fb.getBoundingClientRect();
+                    const absoluteFbTop = fbRect.top + window.pageYOffset;
+                    // Rola para o topo da caixa de feedback com um pequeno respiro (20px)
+                    // evitando que a tela desça demais para o footer
+                    window.scrollTo({ top: absoluteFbTop - 20, behavior: 'smooth' });
                 }
             }, 100);
         }
@@ -841,6 +876,7 @@
             
             modal.style.display = isHidden ? 'flex' : 'none';
             modal.setAttribute('aria-hidden', !isHidden);
+            document.body.classList.toggle('modal-open', isHidden);
             
             if (isHidden) {
                 content.scrollTop = 0;
@@ -858,6 +894,7 @@
             
             modal.style.display = isHidden ? 'flex' : 'none';
             modal.setAttribute('aria-hidden', !isHidden);
+            document.body.classList.toggle('modal-open', isHidden);
             
             if (isHidden) {
                 content.scrollTop = 0;
@@ -878,6 +915,59 @@
             const isHigh = document.body.classList.contains('high-contrast');
             document.getElementById('contrastBtn').textContent = isHigh ? "Modo Normal" : "Ativar Alto Contraste";
         }
+
+        // Navegação por Teclado (Setas, AD e Scroll WS)
+        window.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase();
+            
+            // Lógica de Scroll com W e S
+            if (key === 'w' || key === 's') {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+                
+                const scrollStep = 100;
+                const direction = key === 'w' ? -1 : 1;
+                
+                // Verifica se há um modal aberto para rolar o conteúdo dele
+                const activeModalBody = document.querySelector('.modal-overlay[style*="display: flex"] .modal-body');
+                
+                if (activeModalBody) {
+                    activeModalBody.scrollBy({ top: direction * scrollStep, behavior: 'smooth' });
+                } else {
+                    window.scrollBy({ top: direction * scrollStep, behavior: 'smooth' });
+                }
+                e.preventDefault();
+                return;
+            }
+
+            if (['arrowleft', 'arrowright', 'a', 'd'].includes(key)) {
+                // Se estiver digitando em algum campo, ignorar
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+                const focusableElements = Array.from(document.querySelectorAll('button, [href], input, select, textarea, [tabindex="0"]'))
+                    .filter(el => {
+                        const style = window.getComputedStyle(el);
+                        return style.display !== 'none' && style.visibility !== 'hidden' && !el.disabled;
+                    });
+
+                if (focusableElements.length === 0) return;
+
+                const currentIndex = focusableElements.indexOf(document.activeElement);
+                let nextIndex;
+
+                if (key === 'arrowleft' || key === 'a') {
+                    // Esquerda ou A para o anterior
+                    nextIndex = currentIndex <= 0 ? focusableElements.length - 1 : currentIndex - 1;
+                } else if (key === 'arrowright' || key === 'd') {
+                    // Direita ou D para o próximo
+                    nextIndex = currentIndex >= focusableElements.length - 1 || currentIndex === -1 ? 0 : currentIndex + 1;
+                }
+
+                if (nextIndex !== undefined) {
+                    focusableElements[nextIndex].focus();
+                    e.preventDefault(); 
+                }
+            }
+        });
 
         render();
     </script>
