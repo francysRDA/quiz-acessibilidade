@@ -336,7 +336,7 @@
                 <li><strong>🖱️ Com o Mouse:</strong> Clique nos botões para selecionar respostas ou avançar.</li>
                 <li><strong>📱 No Smartphone:</strong> Toque com o dedo diretamente sobre os botões e alternativas.</li>
                 <li><strong>⌨️ Com o Teclado:</strong> Use a tecla <strong>Tab</strong> para navegar entre os elementos e <strong>Enter</strong> ou <strong>Espaço</strong> para ativar os botões.</li>
-                <li><strong>🔍 Acessibilidade:</strong> Use os botões no topo para aumentar a letra (A+) ou ativar o modo de Alto Contraste se tiver dificuldade de visão.</li>
+                <li><strong>🔍 Acessibilidade:</strong> Use os botões no topo para aumentar a letra (A+) ou ativar o modo de Alto Contraste se tiver dificuldade de visão..</li>
                 <li><strong>📖 Aprendizado e Prática:</strong> Leia primeiro o conceito teórico e depois clique em "Ir para o desafio" para responder a pergunta.</li>
                 <li><strong>🔄 Refazer:</strong> Se errar, você pode clicar em "Tentar Novamente" para revisar a questão.</li>
                 <li><strong>⬅️ Voltar:</strong> Você pode retornar para reler conceitos ou ver a questão anterior.</li>
@@ -562,7 +562,8 @@
             fontSize: 16,
             answered: false,
             lastCorrect: false,
-            shuffledOptions: []
+            shuffledOptions: [],
+            persistentAnswers: new Array(quizData.length).fill(null)
         };
 
         function shuffleArray(array) {
@@ -592,6 +593,7 @@
                         <strong>2. Prática:</strong> Fixe o que aprendeu com pequenos desafios.</p>
                         <button class="btn-primary" onclick="startLearn()">Começar Aprendizado</button>
                     </div>`;
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             } else if (state.phase === 'learn') {
                 const item = quizData[state.idx];
                 app.innerHTML = `
@@ -606,8 +608,12 @@
                             <button class="btn-primary" onclick="startPractice()">Entendi! Ir para o desafio →</button>
                         </div>
                     </div>`;
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             } else if (state.phase === 'practice') {
                 const item = quizData[state.idx];
+                const saved = state.persistentAnswers[state.idx];
+                const isCorrect = saved && saved.correct;
+
                 app.innerHTML = `
                     <div class="card">
                         <div class="progress-bar"><div class="progress-fill" style="width:${(state.idx / quizData.length) * 100}%"></div></div>
@@ -618,14 +624,12 @@
                             `).join('')}
                         </div>
                         <div id="fb" class="feedback"></div>
-                        <div id="btn-actions" class="btn-group" style="${state.answered ? 'display:flex;' : 'display:none;'}">
-                            <button id="retry-btn" class="btn-secondary" onclick="retryQuestion()" style="${!state.lastCorrect ? 'display:block;' : 'display:none;'}">Tentar Novamente</button>
-                            <button id="next-btn" class="btn-primary" onclick="nextStep()" style="display:block;">
+                        <div class="btn-group" id="btn-actions">
+                            <button class="btn-secondary" onclick="goBack()" style="${(!state.answered || isCorrect) ? 'display:block;' : 'display:none;'} flex: 1;">Voltar ao Conceito</button>
+                            <button id="retry-btn" class="btn-secondary" onclick="retryQuestion()" style="${state.answered && !state.lastCorrect ? 'display:block;' : 'display:none;'} flex: 1;">Tentar Novamente</button>
+                            <button id="next-btn" class="btn-primary" onclick="nextStep()" style="${state.answered ? 'display:block;' : 'display:none;'} flex: 1;">
                                 ${state.idx === quizData.length - 1 ? "Ver Resultado Final" : "Próximo Conceito"}
                             </button>
-                        </div>
-                        <div id="back-action" style="${!state.answered ? 'display:block;' : 'display:none;'} margin-top:1.5rem;">
-                            <button class="btn-secondary" onclick="goBack()" style="width:100%;">Voltar ao Conceito</button>
                         </div>
                     </div>`;
                 
@@ -635,6 +639,18 @@
                     document.getElementById(`opt-${correctShuffledIdx}`).classList.add('correct');
                     fb.innerHTML = `<span class="feedback-header">${state.lastCorrect ? "✨ Resposta Correta!" : "🔍 Vamos analisar o conceito?"}</span> <p>${item.e}</p>`;
                     fb.className = `feedback active ${state.lastCorrect ? "" : "error"}`;
+                    
+                    setTimeout(() => {
+                        const card = document.querySelector('.card');
+                        if (card) {
+                            const cardRect = card.getBoundingClientRect();
+                            const absoluteCardTop = cardRect.top + window.pageYOffset;
+                            const middle = absoluteCardTop - (window.innerHeight / 2) + (card.offsetHeight / 2);
+                            window.scrollTo({ top: middle, behavior: 'smooth' });
+                        }
+                    }, 100);
+                } else {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
                 }
 
                 setTimeout(() => document.getElementById('q-text').focus(), 100);
@@ -652,6 +668,7 @@
                         }</p>
                         <button class="btn-primary" style="margin-top:2rem;" onclick="location.reload()">Reiniciar Quiz</button>
                     </div>`;
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         }
 
@@ -668,9 +685,16 @@
         
         function startPractice() { 
             state.phase = 'practice'; 
-            state.answered = false; 
-            const item = quizData[state.idx];
-            state.shuffledOptions = shuffleArray(item.o.map((opt, i) => ({ text: opt, originalIndex: i })));
+            const saved = state.persistentAnswers[state.idx];
+            if (saved && saved.correct) {
+                state.answered = true;
+                state.lastCorrect = true;
+                state.shuffledOptions = saved.shuffledOptions;
+            } else {
+                state.answered = false; 
+                const item = quizData[state.idx];
+                state.shuffledOptions = shuffleArray(item.o.map((opt, i) => ({ text: opt, originalIndex: i })));
+            }
             render(); 
         }
 
@@ -681,9 +705,16 @@
                 } else {
                     state.idx--;
                     state.phase = 'practice';
-                    state.answered = false;
-                    const item = quizData[state.idx];
-                    state.shuffledOptions = item.o.map((opt, i) => ({ text: opt, originalIndex: i }));
+                    const saved = state.persistentAnswers[state.idx];
+                    if (saved && saved.correct) {
+                        state.answered = true;
+                        state.lastCorrect = true;
+                        state.shuffledOptions = saved.shuffledOptions;
+                    } else {
+                        state.answered = false;
+                        const item = quizData[state.idx];
+                        state.shuffledOptions = item.o.map((opt, i) => ({ text: opt, originalIndex: i }));
+                    }
                 }
             } else if (state.phase === 'practice') {
                 state.phase = 'learn';
@@ -698,13 +729,10 @@
             const fb = document.getElementById('fb');
             const btns = document.querySelectorAll('.option-btn');
             const btnActions = document.getElementById('btn-actions');
-            const backAction = document.getElementById('back-action');
             const retryBtn = document.getElementById('retry-btn');
             const nextBtn = document.getElementById('next-btn');
             
             btns.forEach(b => b.disabled = true);
-            btnActions.style.display = 'flex';
-            if (backAction) backAction.style.display = 'none';
             
             const selectedOpt = state.shuffledOptions[i];
             const correctShuffledIdx = state.shuffledOptions.findIndex(o => o.originalIndex === item.a);
@@ -712,6 +740,10 @@
             if (selectedOpt.originalIndex === item.a) {
                 state.score++;
                 state.lastCorrect = true;
+                state.persistentAnswers[state.idx] = {
+                    correct: true,
+                    shuffledOptions: state.shuffledOptions
+                };
                 btns[i].classList.add('correct');
                 fb.innerHTML = `<span class="feedback-header">✨ Resposta Correta!</span> <p>${item.e}</p>`;
                 fb.className = 'feedback active';
@@ -721,13 +753,22 @@
             } else {
                 state.lastCorrect = false;
                 btns[i].classList.add('wrong');
-                btns[correctShuffledIdx].classList.add('correct');
                 fb.innerHTML = `<span class="feedback-header">🔍 Vamos analisar o conceito?</span> <p>${item.e}</p>`;
                 fb.className = 'feedback active error';
                 retryBtn.style.display = 'block';
                 nextBtn.style.display = 'block';
                 retryBtn.focus();
             }
+
+            setTimeout(() => {
+                const card = document.querySelector('.card');
+                if (card) {
+                    const cardRect = card.getBoundingClientRect();
+                    const absoluteCardTop = cardRect.top + window.pageYOffset;
+                    const middle = absoluteCardTop - (window.innerHeight / 2) + (card.offsetHeight / 2);
+                    window.scrollTo({ top: middle, behavior: 'smooth' });
+                }
+            }, 100);
         }
 
         function retryQuestion() {
@@ -791,16 +832,6 @@
             const isHigh = document.body.classList.contains('high-contrast');
             document.getElementById('contrastBtn').textContent = isHigh ? "Modo Normal" : "Ativar Alto Contraste";
         }
-
-        function scrollToTop() {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        const originalRender = render;
-        render = function() {
-            originalRender();
-            scrollToTop();
-        };
 
         render();
     </script>
