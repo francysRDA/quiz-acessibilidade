@@ -266,7 +266,9 @@
 
         .options-list { display: flex; flex-direction: column; gap: 0.8rem; }
         .option-btn {
-            display: block;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             width: 100%;
             padding: 1rem 1.2rem;
             text-align: left;
@@ -282,6 +284,9 @@
         .option-btn:hover:not(:disabled) { background-color: rgba(39, 174, 96, 0.1); }
         .option-btn.correct { background-color: #27ae60 !important; color: #fff !important; border-color: #27ae60 !important; }
         .option-btn.wrong { background-color: #c0392b !important; color: #fff !important; border-color: #c0392b !important; }
+
+        .option-btn.correct::after { content: "V"; font-weight: bold; margin-left: 10px; font-size: 1.3rem; }
+        .option-btn.wrong::after { content: "X"; font-weight: bold; margin-left: 10px; font-size: 1.3rem; }
 
         .feedback {
             margin-top: 1.5rem;
@@ -348,22 +353,30 @@
             h1 { font-size: 1.7rem; }
             .btn-group { flex-direction: column; }
             .a11y-controls { 
-                display: flex; 
-                flex-direction: column; 
-                align-items: flex-end;
+                flex-direction: column;
                 gap: 0.8rem; 
                 padding: 1rem;
             }
-            .a11y-group-left, .a11y-group-right {
-                display: flex;
-                flex-direction: column;
-                align-items: flex-end;
+            .a11y-group-left {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
                 width: 100%;
                 gap: 0.5rem;
+            }
+            .a11y-group-right {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                width: 100%;
+                gap: 0.5rem;
+            }
+            /* O terceiro botão do grupo da direita (Contraste) ocupa a largura total */
+            .a11y-group-right button:last-child {
+                grid-column: span 2;
             }
             .a11y-controls button {
                 width: 100%;
                 margin: 0;
+                padding: 0.8rem 0.5rem;
             }
         }
     </style>
@@ -437,7 +450,7 @@
         </main>
     </div>
 
-    <footer role="contentinfo">
+    <footer>
         <p>Recurso Educacional Aberto (REA) para a cadeira de Acessibilidade e Inclusão Digital.</p>
         <p>Licença: <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank">CC BY 4.0</a></p>
         <p>Autores: Antone Salbego, Francys Ribeiro & Lucas Correa.</p>
