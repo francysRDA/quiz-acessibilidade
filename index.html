@@ -348,35 +348,74 @@
         footer a { color: #3498db; font-weight: bold; }
         .high-contrast footer a { color: #ffff00; }
 
+        .mobile-menu-toggle {
+            display: none;
+        }
+
+        .a11y-menu-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
         @media (max-width: 800px) {
             .card { padding: 1.5rem; }
-            h1 { font-size: 1.7rem; }
+            h1 { font-size: 1.5rem; }
             .btn-group { flex-direction: column; }
-            .a11y-controls { 
-                flex-direction: column !important;
-                gap: 0.8rem !important; 
-                padding: 1rem !important;
+            
+            .a11y-controls {
+                flex-direction: column;
+                padding: 0;
+                align-items: stretch;
             }
-            .a11y-group-left {
+
+            .mobile-menu-toggle {
+                display: block;
+                width: 100%;
+                background-color: var(--primary-color);
+                border-bottom: 1px solid rgba(255,255,255,0.1);
+            }
+
+            .mobile-menu-toggle button {
+                width: 100%;
+                background: transparent !important;
+                color: #fff !important;
+                border: none !important;
+                padding: 1rem;
+                font-size: 1.1rem !important;
+                text-align: center;
+                border-radius: 0 !important;
+            }
+
+            .a11y-menu-content {
+                display: none;
+                flex-direction: column;
+                gap: 0.5rem;
+                padding: 1rem;
+                background-color: var(--primary-color);
+            }
+
+            .a11y-menu-content.active {
+                display: flex;
+            }
+
+            .a11y-group-left, .a11y-group-right {
                 display: grid !important;
                 grid-template-columns: 1fr 1fr !important;
                 width: 100% !important;
                 gap: 0.5rem !important;
             }
-            .a11y-group-right {
-                display: grid !important;
-                grid-template-columns: 1fr 1fr !important;
-                width: 100% !important;
-                gap: 0.5rem !important;
-            }
-            /* O terceiro botão do grupo da direita (Contraste) ocupa a largura total */
+            
             .a11y-group-right button:last-child {
                 grid-column: span 2 !important;
             }
+
             .a11y-controls button {
                 width: 100% !important;
                 margin: 0 !important;
                 padding: 0.8rem 0.5rem !important;
+                font-size: 0.95rem !important;
             }
         }
     </style>
@@ -384,14 +423,19 @@
 <body>
 
     <nav class="a11y-controls" aria-label="Controles de suporte e acessibilidade">
-        <div class="a11y-group-left">
-            <button onclick="toggleHelp()" class="btn-help-header" aria-label="Abrir Guia de Ajuda">❓ Ajuda</button>
-            <button onclick="toggleAbout()" class="btn-help-header" aria-label="Abrir Sobre o Projeto">ℹ️ Sobre</button>
+        <div class="mobile-menu-toggle">
+            <button onclick="toggleMobileMenu()" id="menuToggleBtn" aria-expanded="false" aria-controls="a11y-menu-content">Opções ▾</button>
         </div>
-        <div class="a11y-group-right">
-            <button onclick="changeFontSize(2)" aria-label="Aumentar texto">Aumentar Texto (A+)</button>
-            <button onclick="changeFontSize(-2)" aria-label="Diminuir texto">Diminuir Texto (A-)</button>
-            <button onclick="toggleContrast()" id="contrastBtn">Ativar Alto Contraste</button>
+        <div class="a11y-menu-content" id="a11y-menu-content">
+            <div class="a11y-group-left">
+                <button onclick="toggleHelp()" class="btn-help-header" aria-label="Abrir Guia de Ajuda">❓ Ajuda</button>
+                <button onclick="toggleAbout()" class="btn-help-header" aria-label="Abrir Sobre o Projeto">ℹ️ Sobre</button>
+            </div>
+            <div class="a11y-group-right">
+                <button onclick="changeFontSize(2)" aria-label="Aumentar texto">Aumentar Texto (A+)</button>
+                <button onclick="changeFontSize(-2)" aria-label="Diminuir texto">Diminuir Texto (A-)</button>
+                <button onclick="toggleContrast()" id="contrastBtn">Ativar Alto Contraste</button>
+            </div>
         </div>
     </nav>
 
@@ -635,11 +679,19 @@
             }
         ];
 
+        function toggleMobileMenu() {
+            const menu = document.getElementById('a11y-menu-content');
+            const btn = document.getElementById('menuToggleBtn');
+            const isActive = menu.classList.toggle('active');
+            btn.setAttribute('aria-expanded', isActive);
+            btn.textContent = isActive ? "Fechar Opções ▴" : "Opções ▾";
+        }
+
         function getOptimalFontSize() {
             const width = window.innerWidth;
-            // Boost de 200% (32px) estritamente para mobile (telas pequenas)
-            if (width <= 600) return 32; 
-            // Notebooks menores que 17" (lógica de largura < 1600px): 14px (87.5% de 16px)
+            // Mobile padrão: 16px (conforme solicitado para não ficar muito grande)
+            if (width <= 600) return 16; 
+            // Notebooks menores que 17": 14px
             if (width < 1600) return 14;
             // Desktops e notebooks grandes (17"+): 16px
             return 16;
